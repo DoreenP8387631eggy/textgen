@@ -60,20 +60,22 @@ class ColoredFormatter(logging.Formatter):
         color = self.LEVEL_COLORS.get(record.levelno, 'white')
         label = self.LEVEL_LABELS.get(record.levelno, record.levelname)
         colored_level = get_colored_text(f'[{label}]', color)
+        # Also bold the level label to make it easier to scan logs quickly
+        colored_level = get_colored_text(colored_level, 'bold')
         message = super().format(record)
         return f"{colored_level} {message}"
 
 
 def setup_logger(
     name: str = 'textgen',
-    level: int = logging.INFO,
+    level: int = logging.DEBUG,  # personal pref: default to DEBUG for easier local debugging
     log_file: Optional[str] = None,
 ) -> logging.Logger:
     """Configure and return a logger with colored console output.
 
     Args:
         name: Logger name (default: 'textgen').
-        level: Logging level (default: INFO).
+        level: Logging level (default: DEBUG).
         log_file: Optional path to a log file for plain-text output.
 
     Returns:
@@ -107,23 +109,3 @@ def setup_logger(
 
 # Module-level default logger
 logger = setup_logger()
-
-
-def print_info(message: str) -> None:
-    """Log an informational message."""
-    logger.info(message)
-
-
-def print_warning(message: str) -> None:
-    """Log a warning message."""
-    logger.warning(message)
-
-
-def print_error(message: str) -> None:
-    """Log an error message."""
-    logger.error(message)
-
-
-def print_debug(message: str) -> None:
-    """Log a debug message."""
-    logger.debug(message)
