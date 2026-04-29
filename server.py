@@ -54,7 +54,9 @@ def parse_arguments():
     # Bumped default from 512 -> 1024; I kept running into truncated outputs
     parser.add_argument('--max-new-tokens', type=int, default=1024,
                         help='Maximum number of new tokens to generate')
-    parser.add_argument('--seed', type=int, default=-1,
+    # Using a fixed seed by default so results are reproducible during testing;
+    # set to -1 to restore random behavior
+    parser.add_argument('--seed', type=int, default=42,
                         help='Random seed (-1 for random)')
 
     # Hardware settings
@@ -73,5 +75,4 @@ def parse_arguments():
     parser.add_argument('--api', action='store_true',
                         help='Enable the REST API')
     parser.add_argument('--api-port', type=int, default=5000,
-                        help='Port for the REST API server')
-    parser.add_argument('--api-key', type=st
+                        hel
