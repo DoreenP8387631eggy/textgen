@@ -1,67 +1,129 @@
+"""Logging utilities with colored output for textgen.
+
+Provides colored terminal output and structured logging helpers
+consistent with the oobabooga/text-generation-webui style.
+"""
+
 import logging
+import sys
+from typing import Optional
 
-logger = logging.getLogger('textgen')
-
-
-def setup_logging():
-    '''
-    Copied from: https://github.com/vladmandic/automatic
-
-    All credits to vladmandic.
-    '''
-
-    class RingBuffer(logging.StreamHandler):
-        def __init__(self, capacity):
-            super().__init__()
-            self.capacity = capacity
-            self.buffer = []
-            self.formatter = logging.Formatter('{ "asctime":"%(asctime)s", "created":%(created)f, "facility":"%(name)s", "pid":%(process)d, "tid":%(thread)d, "level":"%(levelname)s", "module":"%(module)s", "func":"%(funcName)s", "msg":"%(message)s" }')
-
-        def emit(self, record):
-            msg = self.format(record)
-            # self.buffer.append(json.loads(msg))
-            self.buffer.append(msg)
-            if len(self.buffer) > self.capacity:
-                self.buffer.pop(0)
-
-        def get(self):
-            return self.buffer
-
-    from rich.console import Console
-    from rich.logging import RichHandler
-    from rich.pretty import install as pretty_install
-    from rich.theme import Theme
-    from rich.traceback import install as traceback_install
-
-    level = logging.DEBUG
-    logger.setLevel(logging.DEBUG)  # log to file is always at level debug for facility `sd`
-    console = Console(log_time=True, log_time_format='%H:%M:%S-%f', theme=Theme({
-        "traceback.border": "black",
-        "traceback.border.syntax_error": "black",
-        "inspect.value.border": "black",
-    }))
-    logging.basicConfig(level=logging.ERROR, format='%(asctime)s | %(name)s | %(levelname)s | %(module)s | %(message)s', handlers=[logging.NullHandler()])  # redirect default logger to null
-    pretty_install(console=console)
-    traceback_install(console=console, extra_lines=1, max_frames=10, width=console.width, word_wrap=False, indent_guides=False, suppress=[])
-    while logger.hasHandlers() and len(logger.handlers) > 0:
-        logger.removeHandler(logger.handlers[0])
-
-    # handlers
-    rh = RichHandler(show_time=True, omit_repeated_times=False, show_level=True, show_path=False, markup=False, rich_tracebacks=True, log_time_format='%H:%M:%S-%f', level=level, console=console)
-    rh.setLevel(level)
-    logger.addHandler(rh)
-
-    rb = RingBuffer(100)  # 100 entries default in log ring buffer
-    rb.setLevel(level)
-    logger.addHandler(rb)
-    logger.buffer = rb.buffer
-
-    # overrides
-    logging.getLogger("urllib3").setLevel(logging.ERROR)
-    logging.getLogger("httpx").setLevel(logging.ERROR)
-    logging.getLogger("diffusers").setLevel(logging.ERROR)
-    logging.getLogger("torch").setLevel(logging.ERROR)
-    logging.getLogger("lycoris").handlers = logger.handlers
+# ANSI color codes
+ANSI_COLORS = {
+    'red': '\033[91m',
+    'yellow': '\033[93m',
+    'green': '\033[92m',
+    'cyan': '\033[96m',
+    'blue': '\033[94m',
+    'magenta': '\033[95m',
+    'white': '\033[97m',
+    'reset': '\033[0m',
+    'bold': '\033[1m',
+}
 
 
-setup_logging()
+def get_colored_text(text: str, color: str) -> str:
+    """Wrap text in ANSI color codes.
+
+    Args:
+        text: The string to colorize.
+        color: Color name from ANSI_COLORS keys.
+
+    Returns:
+        Colorized string if color is valid, otherwise plain text.
+    """
+    if color not in ANSI_COLORS:
+        return text
+    return f"{ANSI_COLORS[color]}{text}{ANSI_COLORS['reset']}"
+
+
+class ColoredFormatter(logging.Formatter):
+    """Custom log formatter that adds color based on log level."""
+
+    LEVEL_COLORS = {
+        logging.DEBUG: 'cyan',
+        logging.INFO: 'green',
+        logging.WARNING: 'yellow',
+        logging.ERROR: 'red',
+        logging.CRITICAL: 'magenta',
+    }
+
+    LEVEL_LABELS = {
+        logging.DEBUG: 'DEBUG',
+        logging.INFO: 'INFO',
+        logging.WARNING: 'WARNING',
+        logging.ERROR: 'ERROR',
+        logging.CRITICAL: 'CRITICAL',
+    }
+
+    def format(self, record: logging.LogRecord) -> str:
+        color = self.LEVEL_COLORS.get(record.levelno, 'white')
+        label = self.LEVEL_LABELS.get(record.levelno, record.levelname)
+        colored_level = get_colored_text(f'[{label}]', color)
+        message = super().format(record)
+        return f"{colored_level} {message}"
+
+
+def setup_logger(
+    name: str = 'textgen',
+    level: int = logging.INFO,
+    log_file: Optional[str] = None,
+) -> logging.Logger:
+    """Configure and return a logger with colored console output.
+
+    Args:
+        name: Logger name (default: 'textgen').
+        level: Logging level (default: INFO).
+        log_file: Optional path to a log file for plain-text output.
+
+    Returns:
+        Configured Logger instance.
+    """
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+
+    # Avoid adding duplicate handlers on repeated calls
+    if logger.handlers:
+        return logger
+
+    # Console handler with colors
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(level)
+    console_handler.setFormatter(ColoredFormatter('%(message)s'))
+    logger.addHandler(console_handler)
+
+    # Optional file handler (plain text)
+    if log_file:
+        file_handler = logging.FileHandler(log_file, encoding='utf-8')
+        file_handler.setLevel(level)
+        file_handler.setFormatter(
+            logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
+        )
+        logger.addHandler(file_handler)
+
+    logger.propagate = False
+    return logger
+
+
+# Module-level default logger
+logger = setup_logger()
+
+
+def print_info(message: str) -> None:
+    """Log an informational message."""
+    logger.info(message)
+
+
+def print_warning(message: str) -> None:
+    """Log a warning message."""
+    logger.warning(message)
+
+
+def print_error(message: str) -> None:
+    """Log an error message."""
+    logger.error(message)
+
+
+def print_debug(message: str) -> None:
+    """Log a debug message."""
+    logger.debug(message)
