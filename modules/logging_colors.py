@@ -68,14 +68,14 @@ class ColoredFormatter(logging.Formatter):
 
 def setup_logger(
     name: str = 'textgen',
-    level: int = logging.DEBUG,  # personal pref: default to DEBUG for easier local debugging
+    level: int = logging.INFO,  # changed back to INFO; DEBUG is too noisy for day-to-day use
     log_file: Optional[str] = None,
 ) -> logging.Logger:
     """Configure and return a logger with colored console output.
 
     Args:
         name: Logger name (default: 'textgen').
-        level: Logging level (default: DEBUG).
+        level: Logging level (default: INFO).
         log_file: Optional path to a log file for plain-text output.
 
     Returns:
@@ -103,9 +103,4 @@ def setup_logger(
         )
         logger.addHandler(file_handler)
 
-    logger.propagate = False
     return logger
-
-
-# Module-level default logger
-logger = setup_logger()
