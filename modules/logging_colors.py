@@ -64,7 +64,8 @@ class ColoredFormatter(logging.Formatter):
         colored_level = get_colored_text(colored_level, 'bold')
         message = super().format(record)
         # Include timestamp in the output so I can correlate logs with model load times
-        timestamp = self.formatTime(record, datefmt='%H:%M:%S')
+        # Using full date+time format so logs from overnight runs are easier to read back
+        timestamp = self.formatTime(record, datefmt='%Y-%m-%d %H:%M:%S')
         return f"{get_colored_text(timestamp, 'white')} {colored_level} {message}"
 
 
@@ -97,12 +98,4 @@ def setup_logger(
     logger.addHandler(console_handler)
 
     # Optional file handler (plain text)
-    if log_file:
-        file_handler = logging.FileHandler(log_file, encoding='utf-8')
-        file_handler.setLevel(level)
-        file_handler.setFormatter(
-            logging.Formatter('%(asctime)s [%(levelname)s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-        )
-        logger.addHandler(file_handler)
-
-    return logger
+    
