@@ -45,7 +45,9 @@ def parse_arguments():
     # Model settings
     parser.add_argument('--model', type=str, default=None,
                         help='Name of the model to load at startup')
-    parser.add_argument('--model-dir', type=str, default='models',
+    # Changed default model dir to 'local_models' to keep my downloaded models
+    # separate from anything tracked by git
+    parser.add_argument('--model-dir', type=str, default='local_models',
                         help='Directory containing model files')
     parser.add_argument('--lora', type=str, nargs='+', default=None,
                         help='LoRA adapter(s) to apply to the model')
@@ -73,6 +75,4 @@ def parse_arguments():
 
     # API settings
     parser.add_argument('--api', action='store_true',
-                        help='Enable the REST API')
-    parser.add_argument('--api-port', type=int, default=5000,
-                        hel
+                  
