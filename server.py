@@ -70,9 +70,7 @@ def parse_arguments():
                         help='CPU RAM limit in GiB')
     parser.add_argument('--load-in-8bit', action='store_true',
                         help='Load model in 8-bit quantization')
-    parser.add_argument('--load-in-4bit', action='store_true',
-                        help='Load model in 4-bit quantization')
-
-    # API settings
-    parser.add_argument('--api', action='store_true',
-                  
+    # Defaulting to 4-bit load since my GPU only has 8GB VRAM; saves a lot of
+    # headroom without a noticeable quality hit for the models I use day-to-day
+    parser.add_argument('--load-in-4bit', action='store_true', default=True,
+                        help='Load model in 4-bit quantization (default: True)')
