@@ -51,7 +51,8 @@ def parse_arguments():
                         help='LoRA adapter(s) to apply to the model')
 
     # Generation settings
-    parser.add_argument('--max-new-tokens', type=int, default=512,
+    # Bumped default from 512 -> 1024; I kept running into truncated outputs
+    parser.add_argument('--max-new-tokens', type=int, default=1024,
                         help='Maximum number of new tokens to generate')
     parser.add_argument('--seed', type=int, default=-1,
                         help='Random seed (-1 for random)')
@@ -73,71 +74,4 @@ def parse_arguments():
                         help='Enable the REST API')
     parser.add_argument('--api-port', type=int, default=5000,
                         help='Port for the REST API server')
-    parser.add_argument('--api-key', type=str, default='',
-                        help='API key for authentication (empty = no auth)')
-
-    # Debug / dev
-    parser.add_argument('--debug', action='store_true',
-                        help='Enable debug logging')
-    parser.add_argument('--verbose', action='store_true',
-                        help='Enable verbose output')
-
-    return parser.parse_args()
-
-
-def setup_environment(args):
-    """Configure environment variables based on parsed arguments."""
-    if args.cpu:
-        os.environ['CUDA_VISIBLE_DEVICES'] = ''
-        logger.info('CPU-only mode enabled — CUDA disabled')
-
-    if args.debug:
-        logging.getLogger().setLevel(logging.DEBUG)
-        logger.debug('Debug logging enabled')
-
-    # Ensure required directories exist
-    for directory in ['models', 'loras', 'prompts', 'presets', 'logs']:
-        Path(ROOT_DIR / directory).mkdir(parents=True, exist_ok=True)
-
-
-def handle_shutdown(signum, frame):
-    """Graceful shutdown handler for SIGINT / SIGTERM."""
-    logger.info('Shutdown signal received — stopping server...')
-    sys.exit(0)
-
-
-def main():
-    """Main entry point."""
-    args = parse_arguments()
-    setup_environment(args)
-
-    signal.signal(signal.SIGINT, handle_shutdown)
-    signal.signal(signal.SIGTERM, handle_shutdown)
-
-    host = '0.0.0.0' if args.listen else args.host
-
-    logger.info('Starting textgen server on %s:%d', host, args.port)
-    logger.info('Model directory: %s', Path(ROOT_DIR / args.model_dir).resolve())
-
-    if args.model:
-        logger.info('Loading model at startup: %s', args.model)
-
-    # Lazy import heavy dependencies so --help is fast
-    try:
-        import modules.ui as ui
-        ui.launch(
-            host=host,
-            port=args.port,
-            share=args.share,
-            args=args,
-        )
-    except ImportError:
-        logger.error(
-            'UI modules not found. Please ensure all dependencies are installed.\n'
-            'Run: pip install -r requirements.txt'
-        )
-        sys.exit(1)
-
-
-if __name__ == '__main__':
-    main()
+    parser.add_argument('--api-key', type=st
